@@ -44,7 +44,7 @@ services:
     container_name: tripgrid-rabbitmq
     restart: unless-stopped
     environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-tripgrid}
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-tripgrid}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-tripgrid_secret}
     ports:
       - "${RABBITMQ_PORT:-5672}:5672"

@@ -100,6 +100,9 @@ public class EmailSenderService {
                   </div>
                 </body>
                 </html>
-                """.formatted(firstName, code);
+                """.formatted(
+                org.springframework.web.util.HtmlUtils.htmlEscape(firstName == null ? "" : firstName),
+                org.springframework.web.util.HtmlUtils.htmlEscape(code == null ? "" : code)
+        );
     }
 }

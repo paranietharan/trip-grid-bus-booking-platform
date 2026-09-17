@@ -20,7 +20,7 @@ TripGrid is an event-driven microservices-based bus booking platform engineered 
     |    |    |                                              |
     |    |    +-------------------- RabbitMQ ----------------+
     |    |               (tripgrid.events exchange)
-    |    |          [user.registered, email.verification]
+    |    |          [user.registered, email.verification.requested]
     |    |
     |    +------ Redis (Code Cache & Rate Limiting)
     |
