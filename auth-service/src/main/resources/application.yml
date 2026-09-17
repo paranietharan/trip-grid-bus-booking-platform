@@ -66,6 +66,8 @@ tripgrid:
     code-expiration-minutes: 10
     max-resend-attempts: 3
     resend-window-minutes: 15
+  seed:
+    enabled: ${SEED_DATA_ENABLED:true}
 
 management:
   endpoints:
