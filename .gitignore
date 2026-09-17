@@ -119,9 +119,6 @@ logs/
 # Environment & Secrets (Local Overrides)
 # -------------------------------------------------------------------------
 .env
-.env.local
-.env.*.local
-*.env
 application-local.yml
 application-local.yaml
 application-local.properties
