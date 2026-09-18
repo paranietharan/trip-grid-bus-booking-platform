@@ -50,7 +50,8 @@ public class TripService {
 
         validateTripTimes(request.getDepartureTime(), request.getArrivalTime());
 
-        Bus bus = busRepository.findById(request.getBusId())
+        // Acquire row-level pessimistic write lock on the Bus row to serialize concurrent scheduling transactions for the same bus
+        Bus bus = busRepository.findByIdForUpdate(request.getBusId())
                 .orElseThrow(() -> new ResourceNotFoundException("Bus not found with id: " + request.getBusId()));
 
         if (!bus.getProviderId().equals(providerId)) {
@@ -136,7 +137,8 @@ public class TripService {
 
         validateTripTimes(request.getDepartureTime(), request.getArrivalTime());
 
-        Bus bus = busRepository.findById(request.getBusId())
+        // Acquire row-level pessimistic write lock on the Bus row to serialize concurrent scheduling transactions for the same bus
+        Bus bus = busRepository.findByIdForUpdate(request.getBusId())
                 .orElseThrow(() -> new ResourceNotFoundException("Bus not found with id: " + request.getBusId()));
 
         if (!bus.getProviderId().equals(trip.getProviderId())) {

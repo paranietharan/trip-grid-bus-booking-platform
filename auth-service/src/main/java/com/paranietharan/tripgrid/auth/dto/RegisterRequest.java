@@ -1,6 +1,5 @@
 package com.paranietharan.tripgrid.auth.dto;
 
-import com.paranietharan.tripgrid.auth.entity.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -33,10 +32,6 @@ public class RegisterRequest {
     )
     private String password;
 
-    private Role role;
-
-    private String tenantId;
-
     public RegisterRequest() {
     }
 
@@ -46,16 +41,6 @@ public class RegisterRequest {
         this.email = email;
         this.phoneNumber = phoneNumber;
         this.password = password;
-    }
-
-    public RegisterRequest(String firstName, String lastName, String email, String phoneNumber, String password, Role role, String tenantId) {
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.email = email;
-        this.phoneNumber = phoneNumber;
-        this.password = password;
-        this.role = role;
-        this.tenantId = tenantId;
     }
 
     // Getters and Setters
@@ -97,21 +82,5 @@ public class RegisterRequest {
 
     public void setPassword(String password) {
         this.password = password;
-    }
-
-    public Role getRole() {
-        return role;
-    }
-
-    public void setRole(Role role) {
-        this.role = role;
-    }
-
-    public String getTenantId() {
-        return tenantId;
-    }
-
-    public void setTenantId(String tenantId) {
-        this.tenantId = tenantId;
     }
 }

@@ -3,6 +3,7 @@ package com.paranietharan.tripgrid.provider.security;
 import com.paranietharan.tripgrid.provider.entity.Role;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.UnsupportedJwtException;
@@ -35,6 +36,7 @@ public class JwtService {
     public boolean validateToken(String token) {
         try {
             Jwts.parser()
+                    .requireIssuer(issuer)
                     .verifyWith(signingKey)
                     .build()
                     .parseSignedClaims(token);
@@ -45,12 +47,15 @@ public class JwtService {
             log.warn("Invalid JWT token: {}", e.getMessage());
         } catch (SecurityException e) {
             log.warn("JWT signature verification failed: {}", e.getMessage());
+        } catch (JwtException e) {
+            log.warn("JWT claim validation failed: {}", e.getMessage());
         }
         return false;
     }
 
     public Claims extractAllClaims(String token) {
         return Jwts.parser()
+                .requireIssuer(issuer)
                 .verifyWith(signingKey)
                 .build()
                 .parseSignedClaims(token)

@@ -1,6 +1,7 @@
 package com.paranietharan.tripgrid.provider.security;
 
 import com.paranietharan.tripgrid.provider.entity.Provider;
+import com.paranietharan.tripgrid.provider.entity.ProviderStatus;
 import com.paranietharan.tripgrid.provider.entity.ProviderUser;
 import com.paranietharan.tripgrid.provider.entity.Role;
 import com.paranietharan.tripgrid.provider.exception.ForbiddenException;
@@ -52,13 +53,20 @@ public class TenantSecurityService {
     }
 
     /**
-     * Resolves providerId for a non-super-admin principal or validates tenant match.
+     * Resolves providerId for a non-super-admin principal.
+     * Enforces active provider status and requires a verified database association (provider_users or matching email).
      */
     public UUID resolveProviderIdForPrincipal(UserPrincipal principal) {
         // 1. Check provider_users table first by userId
         List<ProviderUser> providerUsers = providerUserRepository.findByUserId(principal.getUserId());
         if (!providerUsers.isEmpty()) {
-            return providerUsers.get(0).getProviderId();
+            UUID providerId = providerUsers.get(0).getProviderId();
+            Provider provider = providerRepository.findById(providerId)
+                    .orElseThrow(() -> new ForbiddenException("Associated provider organization not found"));
+            if (provider.getStatus() != ProviderStatus.ACTIVE) {
+                throw new ForbiddenException("Provider organization is not active (status: " + provider.getStatus() + ")");
+            }
+            return providerId;
         }
 
         // 2. Check if user's email matches an existing registered provider (e.g. primary account or seeded user)
@@ -66,6 +74,9 @@ public class TenantSecurityService {
             Optional<Provider> providerByEmail = providerRepository.findByEmailIgnoreCase(principal.getEmail().trim().toLowerCase());
             if (providerByEmail.isPresent()) {
                 Provider provider = providerByEmail.get();
+                if (provider.getStatus() != ProviderStatus.ACTIVE) {
+                    throw new ForbiddenException("Provider organization is not active (status: " + provider.getStatus() + ")");
+                }
                 if (!providerUserRepository.existsByProviderIdAndUserId(provider.getId(), principal.getUserId())) {
                     ProviderUser pu = new ProviderUser();
                     pu.setProviderId(provider.getId());
@@ -79,17 +90,6 @@ public class TenantSecurityService {
                     }
                 }
                 return provider.getId();
-            }
-        }
-
-        // 3. Check if tenantId in JWT is a valid UUID matching a provider
-        if (principal.getTenantId() != null && !principal.getTenantId().isBlank()) {
-            try {
-                UUID tenantUuid = UUID.fromString(principal.getTenantId());
-                if (providerRepository.existsById(tenantUuid)) {
-                    return tenantUuid;
-                }
-            } catch (IllegalArgumentException ignored) {
             }
         }
 

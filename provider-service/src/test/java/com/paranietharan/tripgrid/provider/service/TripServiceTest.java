@@ -81,7 +81,7 @@ class TripServiceTest {
         );
 
         when(tenantSecurityService.getRequiredProviderId()).thenReturn(providerId);
-        when(busRepository.findById(busId)).thenReturn(Optional.of(bus));
+        when(busRepository.findByIdForUpdate(busId)).thenReturn(Optional.of(bus));
         when(routeRepository.findById(routeId)).thenReturn(Optional.of(route));
         when(tripRepository.findOverlappingTrips(busId, departureTime, arrivalTime)).thenReturn(Collections.emptyList());
 
@@ -121,7 +121,7 @@ class TripServiceTest {
         );
 
         when(tenantSecurityService.getRequiredProviderId()).thenReturn(providerId);
-        when(busRepository.findById(busId)).thenReturn(Optional.of(otherBus));
+        when(busRepository.findByIdForUpdate(busId)).thenReturn(Optional.of(otherBus));
 
         assertThatThrownBy(() -> tripService.createTrip(request))
                 .isInstanceOf(ForbiddenException.class)
@@ -139,7 +139,7 @@ class TripServiceTest {
                 new BigDecimal("2500.00"), "LKR", TripStatus.SCHEDULED, Instant.now(), Instant.now());
 
         when(tenantSecurityService.getRequiredProviderId()).thenReturn(providerId);
-        when(busRepository.findById(busId)).thenReturn(Optional.of(bus));
+        when(busRepository.findByIdForUpdate(busId)).thenReturn(Optional.of(bus));
         when(routeRepository.findById(routeId)).thenReturn(Optional.of(route));
         when(tripRepository.findOverlappingTrips(busId, departureTime, arrivalTime)).thenReturn(List.of(conflictingTrip));
 

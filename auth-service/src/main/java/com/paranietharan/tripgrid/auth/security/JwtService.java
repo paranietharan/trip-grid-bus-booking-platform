@@ -62,6 +62,7 @@ public class JwtService {
 
     public Claims extractAllClaims(String token) {
         return Jwts.parser()
+                .requireIssuer(issuer)
                 .verifyWith(signingKey)
                 .build()
                 .parseSignedClaims(token)

@@ -19,12 +19,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 class JwtServiceTest {
 
     private static final String SECRET = "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970";
+    private static final String ISSUER = "tripgrid-auth-service";
     private JwtService jwtService;
     private SecretKey secretKey;
 
     @BeforeEach
     void setUp() {
-        jwtService = new JwtService(SECRET, "tripgrid-auth-service");
+        jwtService = new JwtService(SECRET, ISSUER);
         this.secretKey = Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
     }
 
@@ -37,7 +38,7 @@ class JwtServiceTest {
                 .claim("email", "provider@tripgrid.com")
                 .claim("role", "PROVIDER_ADMIN")
                 .claim("tenant_id", "tenant-123")
-                .issuer("tripgrid-auth-service")
+                .issuer(ISSUER)
                 .issuedAt(new Date())
                 .expiration(Date.from(Instant.now().plus(1, ChronoUnit.HOURS)))
                 .signWith(secretKey)
@@ -55,6 +56,39 @@ class JwtServiceTest {
     }
 
     @Test
+    @DisplayName("Should return false when token has an untrusted or mismatched issuer")
+    void shouldRejectTokenWithMismatchedIssuer() {
+        UUID userId = UUID.randomUUID();
+        String tokenWithWrongIssuer = Jwts.builder()
+                .subject(userId.toString())
+                .claim("email", "attacker@malicious.com")
+                .claim("role", "SUPER_ADMIN")
+                .issuer("untrusted-rogue-issuer")
+                .issuedAt(new Date())
+                .expiration(Date.from(Instant.now().plus(1, ChronoUnit.HOURS)))
+                .signWith(secretKey)
+                .compact();
+
+        assertThat(jwtService.validateToken(tokenWithWrongIssuer)).isFalse();
+    }
+
+    @Test
+    @DisplayName("Should return false when token is missing issuer claim")
+    void shouldRejectTokenWithoutIssuer() {
+        UUID userId = UUID.randomUUID();
+        String tokenWithoutIssuer = Jwts.builder()
+                .subject(userId.toString())
+                .claim("email", "user@tripgrid.com")
+                .claim("role", "CUSTOMER")
+                .issuedAt(new Date())
+                .expiration(Date.from(Instant.now().plus(1, ChronoUnit.HOURS)))
+                .signWith(secretKey)
+                .compact();
+
+        assertThat(jwtService.validateToken(tokenWithoutIssuer)).isFalse();
+    }
+
+    @Test
     @DisplayName("Should return false for expired token")
     void shouldRejectExpiredToken() {
         UUID userId = UUID.randomUUID();
@@ -62,7 +96,7 @@ class JwtServiceTest {
                 .subject(userId.toString())
                 .claim("email", "user@tripgrid.com")
                 .claim("role", "CUSTOMER")
-                .issuer("tripgrid-auth-service")
+                .issuer(ISSUER)
                 .issuedAt(Date.from(Instant.now().minus(2, ChronoUnit.HOURS)))
                 .expiration(Date.from(Instant.now().minus(1, ChronoUnit.HOURS)))
                 .signWith(secretKey)

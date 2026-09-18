@@ -42,11 +42,13 @@ class TenantSecurityServiceTest {
 
     private UUID userId;
     private UUID providerId;
+    private Provider activeProvider;
 
     @BeforeEach
     void setUp() {
         userId = UUID.randomUUID();
         providerId = UUID.randomUUID();
+        activeProvider = new Provider(providerId, "Express Lines", "provider@tripgrid.com", "+94771234567", "Colombo", ProviderStatus.ACTIVE, Instant.now(), Instant.now());
     }
 
     @AfterEach
@@ -55,16 +57,33 @@ class TenantSecurityServiceTest {
     }
 
     @Test
-    @DisplayName("Should resolve providerId for PROVIDER_ADMIN via provider_users mapping")
+    @DisplayName("Should resolve providerId for PROVIDER_ADMIN via active provider_users mapping")
     void shouldResolveProviderIdForProviderAdmin() {
         UserPrincipal principal = new UserPrincipal(userId, "provider@tripgrid.com", Role.PROVIDER_ADMIN, null);
         SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
 
         ProviderUser providerUser = new ProviderUser(UUID.randomUUID(), providerId, userId, Role.PROVIDER_ADMIN, Instant.now(), Instant.now());
         when(providerUserRepository.findByUserId(userId)).thenReturn(List.of(providerUser));
+        when(providerRepository.findById(providerId)).thenReturn(Optional.of(activeProvider));
 
         UUID resolved = tenantSecurityService.getRequiredProviderId();
         assertThat(resolved).isEqualTo(providerId);
+    }
+
+    @Test
+    @DisplayName("Should reject access when associated provider is SUSPENDED or INACTIVE")
+    void shouldRejectAccessWhenProviderIsSuspended() {
+        UserPrincipal principal = new UserPrincipal(userId, "provider@tripgrid.com", Role.PROVIDER_ADMIN, null);
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
+
+        Provider suspendedProvider = new Provider(providerId, "Express Lines", "provider@tripgrid.com", "+94771234567", "Colombo", ProviderStatus.SUSPENDED, Instant.now(), Instant.now());
+        ProviderUser providerUser = new ProviderUser(UUID.randomUUID(), providerId, userId, Role.PROVIDER_ADMIN, Instant.now(), Instant.now());
+        when(providerUserRepository.findByUserId(userId)).thenReturn(List.of(providerUser));
+        when(providerRepository.findById(providerId)).thenReturn(Optional.of(suspendedProvider));
+
+        assertThatThrownBy(() -> tenantSecurityService.getRequiredProviderId())
+                .isInstanceOf(ForbiddenException.class)
+                .hasMessageContaining("not active");
     }
 
     @Test
@@ -73,9 +92,8 @@ class TenantSecurityServiceTest {
         UserPrincipal principal = new UserPrincipal(userId, "provider@tripgrid.com", Role.PROVIDER_ADMIN, null);
         SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
 
-        Provider provider = new Provider(providerId, "Express Lines", "provider@tripgrid.com", "+94771234567", "Colombo", ProviderStatus.ACTIVE, Instant.now(), Instant.now());
         when(providerUserRepository.findByUserId(userId)).thenReturn(Collections.emptyList());
-        when(providerRepository.findByEmailIgnoreCase("provider@tripgrid.com")).thenReturn(Optional.of(provider));
+        when(providerRepository.findByEmailIgnoreCase("provider@tripgrid.com")).thenReturn(Optional.of(activeProvider));
         when(providerUserRepository.existsByProviderIdAndUserId(providerId, userId)).thenReturn(false);
 
         UUID resolved = tenantSecurityService.getRequiredProviderId();
@@ -100,6 +118,7 @@ class TenantSecurityServiceTest {
 
         ProviderUser providerUser = new ProviderUser(UUID.randomUUID(), providerId, userId, Role.PROVIDER_ADMIN, Instant.now(), Instant.now());
         when(providerUserRepository.findByUserId(userId)).thenReturn(List.of(providerUser));
+        when(providerRepository.findById(providerId)).thenReturn(Optional.of(activeProvider));
 
         UUID anotherProviderId = UUID.randomUUID();
         assertThatThrownBy(() -> tenantSecurityService.verifyProviderAccess(anotherProviderId))
