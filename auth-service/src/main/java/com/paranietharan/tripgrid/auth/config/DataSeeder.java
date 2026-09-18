@@ -41,6 +41,7 @@ public class DataSeeder implements CommandLineRunner {
 
         log.info("Checking sample data seeds for TripGrid Auth Service...");
 
+        // 1. Super Admin
         seedUserIfNotExists(
                 "superadmin@tripgrid.com",
                 "SuperAdminPassword123!",
@@ -51,6 +52,7 @@ public class DataSeeder implements CommandLineRunner {
                 null
         );
 
+        // 2. Provider Admin
         seedUserIfNotExists(
                 "provider@tripgrid.com",
                 "ProviderPassword123!",
@@ -61,6 +63,18 @@ public class DataSeeder implements CommandLineRunner {
                 "tenant-express-lines"
         );
 
+        // 3. Provider Staff
+        seedUserIfNotExists(
+                "staff@tripgrid.com",
+                "StaffPassword123!",
+                "Provider",
+                "Staff",
+                "+94770000004",
+                Role.PROVIDER_STAFF,
+                "tenant-express-lines"
+        );
+
+        // 4. Customer
         seedUserIfNotExists(
                 "customer@tripgrid.com",
                 "CustomerPassword123!",

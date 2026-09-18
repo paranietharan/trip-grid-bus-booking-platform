@@ -1,22 +1,82 @@
 services:
-  postgres:
+  # ------------------------------------------------------------
+  # Microservice PostgreSQL Databases (Isolated on separate ports)
+  # ------------------------------------------------------------
+  postgres-auth:
     image: postgres:16-alpine
-    container_name: tripgrid-postgres
+    container_name: tripgrid-postgres-auth
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-tripgrid_auth}
-      POSTGRES_USER: ${POSTGRES_USER:-tripgrid}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tripgrid_secret}
+      POSTGRES_DB: ${AUTH_DB_NAME:-tripgrid_auth}
+      POSTGRES_USER: ${DB_USERNAME:-tripgrid}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-tripgrid_secret}
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "${AUTH_DB_PORT:-5432}:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_auth_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-tripgrid} -d ${POSTGRES_DB:-tripgrid_auth}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-tripgrid} -d ${AUTH_DB_NAME:-tripgrid_auth}"]
       interval: 5s
       timeout: 5s
       retries: 5
 
+  postgres-provider:
+    image: postgres:16-alpine
+    container_name: tripgrid-postgres-provider
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${PROVIDER_DB_NAME:-tripgrid_provider}
+      POSTGRES_USER: ${DB_USERNAME:-tripgrid}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-tripgrid_secret}
+    ports:
+      - "${PROVIDER_DB_PORT:-5433}:5432"
+    volumes:
+      - postgres_provider_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-tripgrid} -d ${PROVIDER_DB_NAME:-tripgrid_provider}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  postgres-booking:
+    image: postgres:16-alpine
+    container_name: tripgrid-postgres-booking
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${BOOKING_DB_NAME:-tripgrid_booking}
+      POSTGRES_USER: ${DB_USERNAME:-tripgrid}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-tripgrid_secret}
+    ports:
+      - "${BOOKING_DB_PORT:-5434}:5432"
+    volumes:
+      - postgres_booking_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-tripgrid} -d ${BOOKING_DB_NAME:-tripgrid_booking}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  postgres-payment:
+    image: postgres:16-alpine
+    container_name: tripgrid-postgres-payment
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${PAYMENT_DB_NAME:-tripgrid_payment}
+      POSTGRES_USER: ${DB_USERNAME:-tripgrid}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-tripgrid_secret}
+    ports:
+      - "${PAYMENT_DB_PORT:-5435}:5432"
+    volumes:
+      - postgres_payment_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-tripgrid} -d ${PAYMENT_DB_NAME:-tripgrid_payment}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ------------------------------------------------------------
+  # Redis Cache & Temporary State
+  # ------------------------------------------------------------
   redis:
     image: redis:7-alpine
     container_name: tripgrid-redis
@@ -39,6 +99,9 @@ services:
       timeout: 5s
       retries: 5
 
+  # ------------------------------------------------------------
+  # RabbitMQ Event Broker
+  # ------------------------------------------------------------
   rabbitmq:
     image: rabbitmq:3.13-management-alpine
     container_name: tripgrid-rabbitmq
@@ -57,6 +120,9 @@ services:
       timeout: 5s
       retries: 5
 
+  # ------------------------------------------------------------
+  # Mailpit Mock SMTP Server & Web UI
+  # ------------------------------------------------------------
   mailpit:
     image: axllent/mailpit:latest
     container_name: tripgrid-mailpit
@@ -66,7 +132,13 @@ services:
       - "${MAIL_UI_PORT:-8025}:8025"
 
 volumes:
-  postgres_data:
+  postgres_auth_data:
+    driver: local
+  postgres_provider_data:
+    driver: local
+  postgres_booking_data:
+    driver: local
+  postgres_payment_data:
     driver: local
   redis_data:
     driver: local

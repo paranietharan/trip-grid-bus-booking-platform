@@ -42,13 +42,14 @@ class DataSeederTest {
         dataSeeder.run();
 
         ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
-        verify(userRepository, times(3)).save(userCaptor.capture());
+        verify(userRepository, times(4)).save(userCaptor.capture());
 
         var seededUsers = userCaptor.getAllValues();
-        assertThat(seededUsers).hasSize(3);
+        assertThat(seededUsers).hasSize(4);
 
         assertThat(seededUsers).anyMatch(u -> u.getEmail().equals("superadmin@tripgrid.com") && u.getRole() == Role.SUPER_ADMIN && u.isEmailVerified());
         assertThat(seededUsers).anyMatch(u -> u.getEmail().equals("provider@tripgrid.com") && u.getRole() == Role.PROVIDER_ADMIN && "tenant-express-lines".equals(u.getTenantId()));
+        assertThat(seededUsers).anyMatch(u -> u.getEmail().equals("staff@tripgrid.com") && u.getRole() == Role.PROVIDER_STAFF && "tenant-express-lines".equals(u.getTenantId()));
         assertThat(seededUsers).anyMatch(u -> u.getEmail().equals("customer@tripgrid.com") && u.getRole() == Role.CUSTOMER && u.isEmailVerified());
     }
 
@@ -67,6 +68,7 @@ class DataSeederTest {
     void shouldNotDuplicateExistingUsers() {
         when(userRepository.existsByEmailIgnoreCase("superadmin@tripgrid.com")).thenReturn(true);
         when(userRepository.existsByEmailIgnoreCase("provider@tripgrid.com")).thenReturn(true);
+        when(userRepository.existsByEmailIgnoreCase("staff@tripgrid.com")).thenReturn(true);
         when(userRepository.existsByEmailIgnoreCase("customer@tripgrid.com")).thenReturn(true);
 
         dataSeeder = new DataSeeder(userRepository, passwordEncoder, true);
