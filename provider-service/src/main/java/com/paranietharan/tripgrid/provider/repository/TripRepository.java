@@ -58,7 +58,7 @@ public interface TripRepository extends JpaRepository<Trip, UUID> {
           AND (:origin IS NULL OR LOWER(r.origin) = LOWER(:origin))
           AND (:destination IS NULL OR LOWER(r.destination) = LOWER(:destination))
           AND (:fromTime IS NULL OR t.departureTime >= :fromTime)
-          AND (:toTime IS NULL OR t.departureTime <= :toTime)
+          AND (:toTime IS NULL OR t.departureTime < :toTime)
           AND (:minPrice IS NULL OR t.price >= :minPrice)
           AND (:maxPrice IS NULL OR t.price <= :maxPrice)
         ORDER BY t.departureTime ASC

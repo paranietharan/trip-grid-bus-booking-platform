@@ -19,6 +19,10 @@ public class ProviderDataSeeder implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(ProviderDataSeeder.class);
 
+    public static final UUID SEED_PROVIDER_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
+    public static final UUID SEED_PROVIDER_ADMIN_USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000002");
+    public static final UUID SEED_PROVIDER_STAFF_USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000004");
+
     private final ProviderRepository providerRepository;
     private final ProviderUserRepository providerUserRepository;
     private final BusRepository busRepository;
@@ -54,9 +58,11 @@ public class ProviderDataSeeder implements CommandLineRunner {
         log.info("Checking sample data seeds for TripGrid Provider Service...");
 
         String sampleEmail = "provider@tripgrid.com";
-        Provider provider = providerRepository.findByEmailIgnoreCase(sampleEmail)
+        Provider provider = providerRepository.findById(SEED_PROVIDER_ID)
+                .or(() -> providerRepository.findByEmailIgnoreCase(sampleEmail))
                 .orElseGet(() -> {
                     Provider p = new Provider();
+                    p.setId(SEED_PROVIDER_ID);
                     p.setName("Express Lines Lanka");
                     p.setEmail(sampleEmail);
                     p.setPhoneNumber("+94771234567");
@@ -66,6 +72,10 @@ public class ProviderDataSeeder implements CommandLineRunner {
                     log.info("Seeded sample provider: {} ({})", saved.getName(), saved.getId());
                     return saved;
                 });
+
+        // Seed ProviderUser associations for Admin and Staff
+        seedProviderUserIfNotExists(provider.getId(), SEED_PROVIDER_ADMIN_USER_ID, Role.PROVIDER_ADMIN);
+        seedProviderUserIfNotExists(provider.getId(), SEED_PROVIDER_STAFF_USER_ID, Role.PROVIDER_STAFF);
 
         // Seed sample Bus if not exists
         String regNumber = "WP-ND-4521";
@@ -122,5 +132,18 @@ public class ProviderDataSeeder implements CommandLineRunner {
         }
 
         log.info("Provider data seeding check complete.");
+    }
+
+    private void seedProviderUserIfNotExists(UUID providerId, UUID userId, Role role) {
+        if (!providerUserRepository.existsByProviderIdAndUserId(providerId, userId)) {
+            ProviderUser pu = new ProviderUser();
+            pu.setProviderId(providerId);
+            pu.setUserId(userId);
+            pu.setRole(role);
+            pu.setCreatedAt(Instant.now());
+            pu.setUpdatedAt(Instant.now());
+            providerUserRepository.save(pu);
+            log.info("Seeded provider user mapping: user {} -> provider {} ({})", userId, providerId, role);
+        }
     }
 }

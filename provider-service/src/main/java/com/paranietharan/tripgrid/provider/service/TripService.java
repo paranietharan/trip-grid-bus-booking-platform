@@ -145,11 +145,19 @@ public class TripService {
             throw new ForbiddenException("Cannot update trip: Bus belongs to another provider");
         }
 
+        if (bus.getStatus() != BusStatus.ACTIVE) {
+            throw new BadRequestException("Cannot assign inactive or maintenance bus to a trip");
+        }
+
         Route route = routeRepository.findById(request.getRouteId())
                 .orElseThrow(() -> new ResourceNotFoundException("Route not found with id: " + request.getRouteId()));
 
         if (!route.getProviderId().equals(trip.getProviderId())) {
             throw new ForbiddenException("Cannot update trip: Route belongs to another provider");
+        }
+
+        if (route.getStatus() != RouteStatus.ACTIVE) {
+            throw new BadRequestException("Cannot assign inactive route to a trip");
         }
 
         // Validate schedule conflicts excluding this trip
@@ -215,7 +223,8 @@ public class TripService {
 
         if (departureDate != null) {
             fromTime = departureDate.atStartOfDay().toInstant(ZoneOffset.UTC);
-            toTime = departureDate.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC).minusMillis(1);
+            // Use exclusive upper bound for the start of next UTC day
+            toTime = departureDate.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC);
         }
 
         return tripRepository.searchTrips(origin, destination, fromTime, toTime, providerId, minPrice, maxPrice)

@@ -2,6 +2,7 @@ package com.paranietharan.tripgrid.provider.service;
 
 import com.paranietharan.tripgrid.provider.dto.CreateTripRequest;
 import com.paranietharan.tripgrid.provider.dto.TripResponse;
+import com.paranietharan.tripgrid.provider.dto.UpdateTripRequest;
 import com.paranietharan.tripgrid.provider.entity.*;
 import com.paranietharan.tripgrid.provider.exception.BadRequestException;
 import com.paranietharan.tripgrid.provider.exception.ForbiddenException;
@@ -54,6 +55,7 @@ class TripServiceTest {
     private UUID otherProviderId;
     private UUID busId;
     private UUID routeId;
+    private UUID tripId;
     private Bus bus;
     private Route route;
     private Instant departureTime;
@@ -65,6 +67,7 @@ class TripServiceTest {
         otherProviderId = UUID.randomUUID();
         busId = UUID.randomUUID();
         routeId = UUID.randomUUID();
+        tripId = UUID.randomUUID();
 
         departureTime = Instant.now().plus(1, ChronoUnit.DAYS);
         arrivalTime = departureTime.plus(3, ChronoUnit.HOURS);
@@ -146,5 +149,46 @@ class TripServiceTest {
         assertThatThrownBy(() -> tripService.createTrip(request))
                 .isInstanceOf(ScheduleConflictException.class)
                 .hasMessageContaining("conflicting trip");
+    }
+
+    @Test
+    @DisplayName("Should throw BadRequestException when updating trip with inactive bus")
+    void shouldThrowBadRequestWhenUpdatingWithInactiveBus() {
+        Trip existingTrip = new Trip(tripId, providerId, busId, routeId, departureTime, arrivalTime,
+                new BigDecimal("2500.00"), "LKR", TripStatus.SCHEDULED, Instant.now(), Instant.now());
+
+        Bus maintenanceBus = new Bus(busId, providerId, "WP-1234", "Express", BusType.LUXURY, 40, BusStatus.MAINTENANCE, Instant.now(), Instant.now());
+
+        UpdateTripRequest updateRequest = new UpdateTripRequest(
+                busId, routeId, departureTime, arrivalTime, new BigDecimal("3000.00"), "LKR"
+        );
+
+        when(tripRepository.findById(tripId)).thenReturn(Optional.of(existingTrip));
+        when(busRepository.findByIdForUpdate(busId)).thenReturn(Optional.of(maintenanceBus));
+
+        assertThatThrownBy(() -> tripService.updateTrip(tripId, updateRequest))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("inactive or maintenance bus");
+    }
+
+    @Test
+    @DisplayName("Should throw BadRequestException when updating trip with inactive route")
+    void shouldThrowBadRequestWhenUpdatingWithInactiveRoute() {
+        Trip existingTrip = new Trip(tripId, providerId, busId, routeId, departureTime, arrivalTime,
+                new BigDecimal("2500.00"), "LKR", TripStatus.SCHEDULED, Instant.now(), Instant.now());
+
+        Route inactiveRoute = new Route(routeId, providerId, "Colombo", "Kandy", 115.0, 210, RouteStatus.INACTIVE, Instant.now(), Instant.now());
+
+        UpdateTripRequest updateRequest = new UpdateTripRequest(
+                busId, routeId, departureTime, arrivalTime, new BigDecimal("3000.00"), "LKR"
+        );
+
+        when(tripRepository.findById(tripId)).thenReturn(Optional.of(existingTrip));
+        when(busRepository.findByIdForUpdate(busId)).thenReturn(Optional.of(bus));
+        when(routeRepository.findById(routeId)).thenReturn(Optional.of(inactiveRoute));
+
+        assertThatThrownBy(() -> tripService.updateTrip(tripId, updateRequest))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("inactive route");
     }
 }

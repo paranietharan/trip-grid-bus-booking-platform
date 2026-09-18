@@ -19,6 +19,12 @@ public class DataSeeder implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DataSeeder.class);
 
+    public static final UUID SEED_SUPER_ADMIN_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+    public static final UUID SEED_PROVIDER_ADMIN_ID = UUID.fromString("00000000-0000-0000-0000-000000000002");
+    public static final UUID SEED_CUSTOMER_ID = UUID.fromString("00000000-0000-0000-0000-000000000003");
+    public static final UUID SEED_PROVIDER_STAFF_ID = UUID.fromString("00000000-0000-0000-0000-000000000004");
+    public static final String SEED_PROVIDER_UUID = "11111111-1111-1111-1111-111111111111";
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final boolean seedEnabled;
@@ -43,6 +49,7 @@ public class DataSeeder implements CommandLineRunner {
 
         // 1. Super Admin
         seedUserIfNotExists(
+                SEED_SUPER_ADMIN_ID,
                 "superadmin@tripgrid.com",
                 "SuperAdminPassword123!",
                 "Super",
@@ -54,28 +61,31 @@ public class DataSeeder implements CommandLineRunner {
 
         // 2. Provider Admin
         seedUserIfNotExists(
+                SEED_PROVIDER_ADMIN_ID,
                 "provider@tripgrid.com",
                 "ProviderPassword123!",
                 "Provider",
                 "Admin",
                 "+94770000002",
                 Role.PROVIDER_ADMIN,
-                "tenant-express-lines"
+                SEED_PROVIDER_UUID
         );
 
         // 3. Provider Staff
         seedUserIfNotExists(
+                SEED_PROVIDER_STAFF_ID,
                 "staff@tripgrid.com",
                 "StaffPassword123!",
                 "Provider",
                 "Staff",
                 "+94770000004",
                 Role.PROVIDER_STAFF,
-                "tenant-express-lines"
+                SEED_PROVIDER_UUID
         );
 
         // 4. Customer
         seedUserIfNotExists(
+                SEED_CUSTOMER_ID,
                 "customer@tripgrid.com",
                 "CustomerPassword123!",
                 "Sample",
@@ -89,6 +99,7 @@ public class DataSeeder implements CommandLineRunner {
     }
 
     private void seedUserIfNotExists(
+            UUID id,
             String email,
             String rawPassword,
             String firstName,
@@ -104,7 +115,7 @@ public class DataSeeder implements CommandLineRunner {
         }
 
         User user = new User();
-        user.setId(UUID.randomUUID());
+        user.setId(id);
         user.setEmail(normalizedEmail);
         user.setPasswordHash(passwordEncoder.encode(rawPassword));
         user.setFirstName(firstName);

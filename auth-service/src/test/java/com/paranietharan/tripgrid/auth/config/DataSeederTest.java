@@ -48,8 +48,8 @@ class DataSeederTest {
         assertThat(seededUsers).hasSize(4);
 
         assertThat(seededUsers).anyMatch(u -> u.getEmail().equals("superadmin@tripgrid.com") && u.getRole() == Role.SUPER_ADMIN && u.isEmailVerified());
-        assertThat(seededUsers).anyMatch(u -> u.getEmail().equals("provider@tripgrid.com") && u.getRole() == Role.PROVIDER_ADMIN && "tenant-express-lines".equals(u.getTenantId()));
-        assertThat(seededUsers).anyMatch(u -> u.getEmail().equals("staff@tripgrid.com") && u.getRole() == Role.PROVIDER_STAFF && "tenant-express-lines".equals(u.getTenantId()));
+        assertThat(seededUsers).anyMatch(u -> u.getEmail().equals("provider@tripgrid.com") && u.getRole() == Role.PROVIDER_ADMIN && DataSeeder.SEED_PROVIDER_UUID.equals(u.getTenantId()));
+        assertThat(seededUsers).anyMatch(u -> u.getEmail().equals("staff@tripgrid.com") && u.getRole() == Role.PROVIDER_STAFF && DataSeeder.SEED_PROVIDER_UUID.equals(u.getTenantId()));
         assertThat(seededUsers).anyMatch(u -> u.getEmail().equals("customer@tripgrid.com") && u.getRole() == Role.CUSTOMER && u.isEmailVerified());
     }
 
