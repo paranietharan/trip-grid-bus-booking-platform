@@ -76,19 +76,18 @@ public class AuthService {
             throw new ConflictException("An account with this email already exists");
         }
 
-        Role role = request.getRole() != null ? request.getRole() : Role.CUSTOMER;
-        String tenantId = (role == Role.PROVIDER_ADMIN) ? request.getTenantId() : null;
-
+        // Public registration always forces CUSTOMER role to prevent privilege escalation.
+        // Elevated roles (SUPER_ADMIN, PROVIDER_ADMIN, PROVIDER_STAFF) must be provisioned via admin flows.
         User user = new User();
         user.setFirstName(request.getFirstName().trim());
         user.setLastName(request.getLastName().trim());
         user.setEmail(email);
         user.setPhoneNumber(request.getPhoneNumber().trim());
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        user.setRole(role);
+        user.setRole(Role.CUSTOMER);
         user.setStatus(UserStatus.ACTIVE);
         user.setEmailVerified(false);
-        user.setTenantId(tenantId);
+        user.setTenantId(null);
 
         User savedUser = userRepository.save(user);
         log.info("User registered with id: {}, role: {}", savedUser.getId(), savedUser.getRole());
